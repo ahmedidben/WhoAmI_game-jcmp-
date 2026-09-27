@@ -77,6 +77,7 @@ main{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:28px 20p
 .lvl{display:inline-block;padding:3px 11px;border-radius:99px;font-size:.8rem;font-weight:700;color:#06122A}
 .lvl-easy{background:var(--easy)}.lvl-medium{background:var(--medium)}.lvl-hard{background:var(--hard);color:#fff}
 .lvl.final{background:#fff;color:#06122A}
+.lvl-all{background:linear-gradient(90deg,var(--p1),var(--p2));color:#fff}
 .msg{color:var(--bad);font-weight:600;min-height:1.5em;margin:8px 0 0}
 .panel{background:linear-gradient(180deg,var(--deck),rgba(11,27,61,.82));border:1px solid var(--line);border-radius:16px;padding:22px}
 .panel h2{font-family:var(--display);font-weight:800;font-size:2rem;line-height:1;margin:0 0 8px}
@@ -154,6 +155,7 @@ kbd{font-family:var(--display);font-weight:800;font-size:1.4rem;border:2px solid
 .hints{list-style:none;margin:0;padding:0;display:grid;gap:8px;flex:1;align-content:start}
 .hints li{border-radius:10px;padding:10px 12px;font-size:1.08rem;position:relative;overflow:hidden}
 .hints li.on{background:rgba(255,255,255,.05);border-left:4px solid var(--c);font-weight:500}
+.hints li .tier{display:block;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--c);margin-bottom:2px}
 .hints li.off{border:1px dashed var(--line);color:var(--muted);font-size:.9rem}
 .hints li.new{animation:hintIn .5s cubic-bezier(.2,.9,.3,1.1)}
 .hints li.new::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 25%,rgba(255,255,255,.28) 50%,transparent 75%);transform:translateX(-110%);animation:sweep .9s .15s ease-out forwards}
@@ -448,140 +450,76 @@ tr.first .rank{color:#fff}
 
 <script>
 /* ---------- Content ---------- */
+/* Each card has four piles of hints, from tough to giveaway.
+   Every duel draws one hint from each pile, avoiding the ones shown last time,
+   so the same personality never comes back with the same clues. */
+const TIERS = ["Tough clue", "Clue", "Big clue", "Giveaway"];
 const PEOPLE = [
-  {id:1, name:"Nelson Mandela", level:"easy",
-   hints:["Born in 1918 in a rural village, I trained as a lawyer.","I shared the Nobel Peace Prize in 1993.","I spent 27 years in prison, many of them on Robben Island.","I became the first Black president of South Africa."],
-   bio:"South African anti-apartheid leader who left prison in 1990 and became president in 1994, leading the country's peaceful transition to democracy."},
-  {id:2, name:"Mohammed V", level:"easy",
-   hints:["I became sultan in 1927 while I was still very young.","During World War II, I refused to hand over Moroccan Jews to the Vichy regime.","In 1953 I was exiled to Corsica and then Madagascar.","I returned in 1955 and led Morocco to independence in 1956."],
-   bio:"Sultan and then King of Morocco. His exile by the French protectorate made him a symbol of the independence movement, achieved in 1956."},
-  {id:3, name:"Abdelkrim El Khattabi", level:"medium",
-   hints:["I worked as a judge and a journalist in Melilla.","My guerrilla tactics later inspired Ho Chi Minh and Mao.","In 1921 I defeated the Spanish army at the Battle of Anoual.","I founded the Rif Republic and died in exile in Cairo in 1963."],
-   bio:"Leader of the Rif resistance against Spanish and French colonial armies, and a reference for anti-colonial movements across the world."},
-  {id:4, name:"Ibn Khaldun", level:"medium",
-   hints:["Born in Tunis in 1332, I served several royal courts, including Fez.","I developed the concept of 'asabiyya, or group solidarity.","I argued that high taxes end up reducing state revenue, an idea Ronald Reagan later quoted.","I wrote the Muqaddimah."],
-   bio:"Maghrebi historian and thinker, often called a founder of sociology and a precursor of modern economics for his analysis of states, taxes and labour."},
-  {id:5, name:"Margaret Thatcher", level:"medium",
-   hints:["I trained as a chemist before entering politics.","I privatized many state companies and faced down the miners' strike.","I led my country in the Falklands War in 1982.","I was the first woman Prime Minister of the United Kingdom, known as the Iron Lady."],
-   bio:"British Prime Minister from 1979 to 1990 whose free-market reforms, known as Thatcherism, reshaped the UK economy."},
-  {id:6, name:"Henry Kissinger", level:"medium",
-   hints:["I was born in Germany in 1923 and fled the Nazis to the United States.","As a Harvard professor, I was a leading voice of Realpolitik.","In 1971 I made a secret trip to China that opened US–China relations.","I served as US Secretary of State under Nixon."],
-   bio:"American diplomat and strategist, one of the most influential and most debated figures of Cold War foreign policy. He died in 2023."},
-  {id:7, name:"Deng Xiaoping", level:"medium",
-   hints:["I was purged twice during Mao's era and came back both times.","I said it doesn't matter whether a cat is black or white, as long as it catches mice.","I created Special Economic Zones like Shenzhen.","I launched China's Reform and Opening Up in 1978."],
-   bio:"Chinese leader whose market reforms from 1978 set China on the path to becoming the world's second-largest economy."},
-  {id:8, name:"Mehdi Ben Barka", level:"hard",
-   hints:["I was a mathematics teacher, and one of my students was the future King Hassan II.","I co-founded the UNFP party in 1959.","I was organizing the Tricontinental Conference of Third World movements.","I disappeared in Paris in October 1965, and my case has never been solved."],
-   bio:"Moroccan opposition leader and a major voice of the Third World movement. His disappearance remains one of the great unsolved political cases."},
-  {id:9, name:"Halford Mackinder", level:"hard",
-   hints:["I was a British geographer and directed the London School of Economics.","In 1904 I published The Geographical Pivot of History.","I said that whoever rules Eastern Europe commands the Heartland, and eventually the world.","I am the father of the Heartland Theory."],
-   bio:"British geographer considered one of the founders of geopolitics. His Heartland Theory still shapes debates on Russia, Eurasia and world power."},
-  {id:10, name:"Elinor Ostrom", level:"hard",
-   hints:["I was an American political scientist, not an economist by training.","I studied how communities manage fisheries, forests and irrigation systems.","I challenged the idea of the tragedy of the commons.","In 2009 I became the first woman to win the Nobel Prize in Economics."],
-   bio:"American scholar who showed that local communities can manage shared resources sustainably without privatization or state control."},
-  {id:11, name:"Barack Obama", level:"easy",
-   hints:["Before politics, I worked as a community organizer in Chicago.","I received the Nobel Peace Prize in 2009, less than a year after taking office.","My health-care reform is commonly known by my name.","I was the 44th president of the United States, and its first Black president."],
-   bio:"US president from 2009 to 2017, elected in the middle of the 2008 financial crisis."},
-  {id:12, name:"Angela Merkel", level:"easy",
-   hints:["I grew up in East Germany and hold a doctorate in quantum chemistry.","During the 2015 refugee crisis I said: \"Wir schaffen das\", we can do this.","I led my country for 16 years, from 2005 to 2021.","I was Germany's first woman chancellor."],
-   bio:"German chancellor through the euro crisis, the 2015 refugee crisis and the pandemic, and one of Europe's most influential leaders."},
-  {id:13, name:"Mahatma Gandhi", level:"easy",
-   hints:["I studied law in London and worked as a lawyer in South Africa for 21 years.","In 1930 I led a march of about 390 km to the sea to protest the British salt tax.","I called my method of non-violent resistance satyagraha.","I led India's independence movement and was assassinated in 1948."],
-   bio:"Leader of the Indian independence movement whose non-violent methods inspired civil rights movements around the world."},
-  {id:16, name:"Winston Churchill", level:"easy",
-   hints:["I won the Nobel Prize in Literature in 1953.","As a war correspondent I was captured in the Boer War, and escaped.","In 1946 I said an iron curtain had descended across Europe.","I was the British Prime Minister who led the UK through most of World War II."],
-   bio:"British Prime Minister in 1940–1945 and 1951–1955, remembered for his wartime leadership against Nazi Germany."},
-  {id:18, name:"Charles de Gaulle", level:"medium",
-   hints:["In the 1930s I was an army officer who wrote about tank warfare.","On 18 June 1940 I called on the French to keep fighting, on BBC radio from London.","I founded the Fifth Republic in 1958.","Paris's biggest airport is named after me."],
-   bio:"Leader of Free France during World War II and founder of France's Fifth Republic, president from 1959 to 1969."},
-  {id:19, name:"Mikhail Gorbachev", level:"medium",
-   hints:["I studied law at Moscow State University.","My reforms were called glasnost and perestroika.","I received the Nobel Peace Prize in 1990.","I was the last leader of the Soviet Union."],
-   bio:"Soviet leader from 1985 to 1991 whose reforms helped end the Cold War and led, unintentionally, to the end of the USSR."},
-  {id:20, name:"Allal El Fassi", level:"medium",
-   hints:["I was born in Fez in 1910 and studied at Al Quaraouiyine.","The French protectorate exiled me to Gabon for nine years.","I wrote Al-Naqd al-Dhati, Self-Criticism.","I led the Istiqlal party."],
-   bio:"Moroccan scholar, writer and nationalist leader, a central figure of the independence movement and of the Istiqlal party."},
-  {id:21, name:"Lee Kuan Yew", level:"medium",
-   hints:["I studied law at Cambridge.","In 1965 my country was separated from Malaysia, and I wept on television.","My memoirs are titled From Third World to First.","I was Singapore's first prime minister, for 31 years."],
-   bio:"Founding prime minister of Singapore, who turned a small port without natural resources into a global financial hub."},
-  {id:22, name:"Karl Marx", level:"medium",
-   hints:["I was born in Trier in 1818 and spent most of my adult life in London.","I wrote as a European correspondent for the New York Tribune.","In 1848 I co-wrote a manifesto with Friedrich Engels.","I wrote Das Kapital."],
-   bio:"German philosopher and economist whose critique of capitalism inspired socialist and communist movements."},
-  {id:23, name:"Christine Lagarde", level:"medium",
-   hints:["As a teenager I was on France's national synchronized swimming team.","I was the first woman to chair the law firm Baker McKenzie.","I led the International Monetary Fund from 2011 to 2019.","In 2019 I became president of the European Central Bank."],
-   bio:"French lawyer and policymaker, finance minister of France, head of the IMF and then president of the European Central Bank."},
-  {id:24, name:"Friedrich Hayek", level:"hard",
-   hints:["I was born in Vienna and served in World War I.","Throughout the 1930s I was Keynes's great intellectual rival.","I wrote The Road to Serfdom in 1944.","I shared the 1974 Nobel Prize in Economics with Gunnar Myrdal."],
-   bio:"Austrian-British economist and defender of free markets whose work influenced Thatcher and Reagan."},
-  {id:25, name:"Abderrahim Bouabid", level:"hard",
-   hints:["I signed the Independence Manifesto of January 1944.","As Minister of Economy after independence, I oversaw the creation of the dirham.","In 1981 I was jailed for opposing the referendum on the Sahara.","I led the USFP, the Socialist Union of Popular Forces."],
-   bio:"Moroccan nationalist and lawyer, minister of the economy after independence and leader of the USFP opposition party."},
-  {id:26, name:"Zbigniew Brzezinski", level:"hard",
-   hints:["I was born in Warsaw in 1928.","I co-founded the Trilateral Commission with David Rockefeller.","I was National Security Adviser to President Jimmy Carter.","I wrote The Grand Chessboard in 1997."],
-   bio:"Polish-American strategist whose view of Eurasia as the key to world power echoes Mackinder's Heartland."},
-  {id:27, name:"Amartya Sen", level:"hard",
-   hints:["I was born in 1933 in Santiniketan, and the poet Rabindranath Tagore chose my name.","I showed that famines don't happen in functioning democracies with a free press.","I helped create the Human Development Index.","I received the Nobel Prize in Economics in 1998."],
-   bio:"Indian economist and philosopher known for his work on famine, poverty and development as freedom."},
-  {id:28, name:"Kwame Nkrumah", level:"hard",
-   hints:["I studied in the United States and in London.","I popularized the term neo-colonialism in a 1965 book.","I was a founding father of the Organization of African Unity in 1963.","I led Ghana to independence in 1957."],
-   bio:"First leader of independent Ghana and a leading voice of Pan-Africanism."},
-  {id:29, name:"Muhammad Yunus", level:"hard",
-   hints:["I have a PhD in economics from Vanderbilt University.","I started by lending 27 dollars to 42 women in a village.","I founded the Grameen Bank in 1983.","I received the Nobel Peace Prize in 2006 for microcredit."],
-   bio:"Bangladeshi economist who pioneered microcredit. In 2024 he became chief adviser of Bangladesh's interim government."},
-  {id:30, name:"Fatema Mernissi", level:"hard",
-   hints:["I was born in Fez in 1940, in a harem, as I told in a memoir.","I taught sociology at Mohammed V University in Rabat.","I wrote Beyond the Veil in 1975.","In 2003 I shared the Prince of Asturias Award with Susan Sontag."],
-   bio:"Moroccan sociologist and writer, a pioneering voice on women, Islam and society."},
-  {id:31, name:"Martin Luther King Jr.", level:"easy",
-   hints:["I earned a doctorate in theology from Boston University.","I led the Montgomery bus boycott in 1955 and 1956.","At 35, I received the Nobel Peace Prize in 1964.","In 1963 I gave the \"I Have a Dream\" speech in Washington."],
-   bio:"American pastor and leader of the civil rights movement, who fought segregation through non-violent action. He was assassinated in 1968."},
-  {id:32, name:"Napoleon Bonaparte", level:"easy",
-   hints:["I was born in Corsica in 1769.","In 1803 I sold Louisiana to the United States.","My civil code still shapes the law of many countries.","I crowned myself Emperor of the French in 1804, and lost at Waterloo."],
-   bio:"French general and emperor whose wars redrew the map of Europe and whose Civil Code outlived his empire."},
-  {id:33, name:"Abraham Lincoln", level:"easy",
-   hints:["I was a largely self-taught lawyer from Illinois.","In 1863 I gave a famous speech of about 270 words at Gettysburg.","I signed the Emancipation Proclamation.","I was the 16th president of the United States and was assassinated in 1865."],
-   bio:"US president during the Civil War, who preserved the Union and led the abolition of slavery."},
-  {id:34, name:"Ibn Battuta", level:"easy",
-   hints:["I served as a judge in Delhi and in the Maldives.","I travelled roughly 120,000 km over nearly 30 years.","My travel account is called the Rihla.","I was born in Tangier in 1304."],
-   bio:"Moroccan traveller and scholar whose journeys across Africa, the Middle East and Asia make him one of history's greatest explorers."},
-  {id:35, name:"Mao Zedong", level:"easy",
-   hints:["As a young man I worked as a library assistant at Peking University.","I led the Long March in 1934 and 1935.","I launched the Great Leap Forward and the Cultural Revolution.","I proclaimed the People's Republic of China in 1949."],
-   bio:"Founder of the People's Republic of China and its leader until 1976. His policies transformed China at an enormous human cost."},
-  {id:36, name:"Kofi Annan", level:"medium",
-   hints:["I was born in Kumasi in 1938 and studied economics in the United States.","I spent almost my whole career inside the United Nations system.","I shared the Nobel Peace Prize in 2001 with my organization.","I was the seventh UN Secretary-General, the first from sub-Saharan Africa."],
-   bio:"Ghanaian diplomat and UN Secretary-General from 1997 to 2006, known for the Millennium Development Goals."},
-  {id:37, name:"Milton Friedman", level:"medium",
-   hints:["I was born in Brooklyn in 1912.","I wrote a book titled There's No Such Thing as a Free Lunch.","Economists trained in my Chicago school advised Chile in the 1970s.","I won the 1976 Nobel Prize in Economics and championed monetarism."],
-   bio:"American economist and defender of free markets whose monetarism shaped central banking from the 1980s."},
-  {id:38, name:"Simón Bolívar", level:"medium",
-   hints:["I was born in Caracas in 1783.","In Rome, on the Monte Sacro, I swore to free my continent.","A country is named after me.","I led the independence of Venezuela, Colombia, Ecuador, Peru and Bolivia."],
-   bio:"Venezuelan leader called El Libertador, who led much of South America to independence from Spain."},
-  {id:39, name:"Otto von Bismarck", level:"medium",
-   hints:["I was a Prussian aristocrat nicknamed the Iron Chancellor.","I created the world's first state health and pension insurance.","I hosted the Berlin Conference of 1884 and 1885 on Africa.","I unified Germany in 1871 and became its first chancellor."],
-   bio:"Prussian statesman who unified Germany and built a system of European alliances through Realpolitik."},
-  {id:40, name:"Abderrahmane Youssoufi", level:"hard",
-   hints:["I was a lawyer and lived in exile in France for about 15 years.","I led the USFP after Abderrahim Bouabid.","In 1998 I became Prime Minister of the government known as the alternance.","I was the first Moroccan Prime Minister to come from the opposition."],
-   bio:"Moroccan lawyer and opposition leader who led the alternance government from 1998 to 2002."},
-  {id:41, name:"Samir Amin", level:"hard",
-   hints:["I was born in Cairo in 1931 and studied in Paris.","I directed the Third World Forum in Dakar.","I wrote Accumulation on a World Scale.","I theorized how the periphery of the world economy depends on its centre."],
-   bio:"Franco-Egyptian economist, a leading thinker of dependency theory and of development in the Global South."},
-  {id:42, name:"Joseph Stiglitz", level:"hard",
-   hints:["I chaired President Clinton's Council of Economic Advisers.","I was chief economist of the World Bank from 1997 to 2000.","I wrote Globalization and Its Discontents in 2002.","I shared the 2001 Nobel Prize in Economics for work on asymmetric information."],
-   bio:"American economist and critic of the IMF's handling of crises, known for his work on inequality and imperfect markets."},
-  {id:43, name:"Nicholas Spykman", level:"hard",
-   hints:["I was a Dutch-born professor of international relations at Yale.","My 1942 book was America's Strategy in World Politics.","I answered Mackinder: whoever controls the Rimland rules Eurasia.","I am the father of the Rimland theory."],
-   bio:"Dutch-American geopolitician whose Rimland theory influenced the US containment strategy of the Cold War."},
-  {id:44, name:"Esther Duflo", level:"hard",
-   hints:["I was born in Paris in 1972.","I co-founded J-PAL, the poverty action lab at MIT.","I test anti-poverty policies with randomized controlled trials.","In 2019 I became the youngest person to win the Nobel Prize in Economics."],
-   bio:"French-American economist who changed development economics by testing policies with field experiments."}
+  {id:1, name:"Nelson Mandela", level:"easy", hints:[
+    ["I was born in 1918 in a small village.","As a young man I loved boxing and long-distance running.","I studied at the University of Fort Hare.","With a friend, I opened my country's first Black-run law firm."],
+    ["My birth name, Rolihlahla, is often translated as \"troublemaker\".","I co-founded the armed wing of my party in 1961.","At my 1964 trial I said I was prepared to die for my ideal.","The UN celebrates an international day in my honour on 18 July, my birthday."],
+    ["I spent 27 years in prison.","I was held for 18 years on Robben Island.","I shared the Nobel Peace Prize in 1993 with the president who released me.","I walked out of prison in 1990, with my fist raised."],
+    ["I became the first Black president of South Africa in 1994.","I led the fight against apartheid.","People affectionately call me Madiba."]],
+   bio:"South African leader of the fight against apartheid, Nobel Peace Prize 1993, who led his country's peaceful transition to democracy."},
+  {id:2, name:"Mahatma Gandhi", level:"easy", hints:[
+    ["I was born in 1869 in a coastal town in western India.","I was married at 13.","I studied law in London.","In South Africa I was thrown out of a first-class train compartment because of my skin colour."],
+    ["I spent 21 years in South Africa fighting discrimination against Indians.","I lived in community farms called ashrams.","I fasted many times as a form of political protest.","I called my method satyagraha, \"truth force\"."],
+    ["In 1930 I walked about 390 km to the sea to make salt, defying a British tax.","I spun my own cloth and asked people to boycott British fabric.","I launched the Quit India movement in 1942.","I was assassinated in 1948."],
+    ["I led India to independence through non-violence.","My face is on every Indian rupee banknote.","People call me Mahatma, \"great soul\"."]],
+   bio:"Leader of India's independence movement, whose non-violent resistance inspired Mandela, Martin Luther King and many others."},
+  {id:3, name:"Napoleon Bonaparte", level:"easy", hints:[
+    ["I was born in 1769 on an island that had just become French.","At military school, I was mocked for my accent.","I was an artillery officer and made my name at the siege of Toulon in 1793.","I married a widow named Joséphine."],
+    ["In 1798 I led an expedition to Egypt with scientists; my soldiers found the Rosetta Stone.","I seized power in a coup in 1799 and became First Consul.","I created the Banque de France and the Legion of Honour.","In 1803 I sold Louisiana to the United States."],
+    ["In 1804 I crowned myself emperor at Notre-Dame.","My Civil Code still shapes the law of many countries.","In 1812 my huge army invaded Russia and was destroyed.","I was exiled to the island of Elba, and escaped."],
+    ["I lost the Battle of Waterloo in 1815.","I died in exile on Saint Helena in 1821.","I was Emperor of the French."]],
+   bio:"French general and emperor whose conquests redrew the map of Europe and whose Civil Code outlived his empire."},
+  {id:4, name:"Galileo Galilei", level:"easy", hints:[
+    ["I was born in Pisa in 1564.","I first studied medicine, then switched to mathematics.","I taught mathematics at the University of Padua for 18 years.","Legend says I timed a swinging cathedral lamp with my pulse."],
+    ["Legend says I dropped balls from the Leaning Tower of Pisa.","I showed that objects fall at the same speed, whatever their weight.","I saw that the Moon has mountains and craters.","My Dialogue Concerning the Two Chief World Systems was banned."],
+    ["In 1609 I improved the telescope and pointed it at the sky.","I discovered the four largest moons of Jupiter.","I defended Copernicus: the Earth turns around the Sun.","In 1633 the Inquisition condemned me, and I spent my last years under house arrest."],
+    ["Legend says I muttered \"And yet it moves\" after my trial.","I'm called the father of modern science.","I was the great Italian astronomer of the telescope."]],
+   bio:"Italian scientist whose telescope observations supported a Sun-centred universe, and whose trial became a symbol of science against authority."},
+  {id:5, name:"Winston Churchill", level:"medium", hints:[
+    ["I was born in 1874 in Blenheim Palace.","My mother was American.","As a war correspondent, I was captured in South Africa and escaped.","I changed political party twice during my career."],
+    ["I painted more than 500 pictures as a hobby.","I was First Lord of the Admiralty in both world wars.","I won the Nobel Prize in Literature in 1953.","In 1946 I said an \"iron curtain\" had fallen across Europe."],
+    ["I was famous for my cigars and my V for Victory sign.","In 1940 I offered only \"blood, toil, tears and sweat\".","I said: \"We shall fight on the beaches.\"","I met Roosevelt and Stalin at Yalta in 1945."],
+    ["I was the British Prime Minister during World War II.","I refused to surrender to Hitler when Britain stood almost alone.","My nickname was the British Bulldog."]],
+   bio:"British Prime Minister during World War II, remembered for refusing to give in to Nazi Germany."},
+  {id:6, name:"Karl Marx", level:"medium", hints:[
+    ["I was born in Trier, Germany, in 1818.","I studied law, then earned a doctorate in philosophy.","I edited a newspaper that the Prussian government shut down.","I was expelled from several countries and settled in London in 1849."],
+    ["I spent years writing in the reading room of the British Museum.","I wrote articles for the New York Tribune.","My co-author, a factory owner's son, supported me financially for years.","I'm buried in Highgate Cemetery in London."],
+    ["I wrote that history is the history of class struggles.","I analysed surplus value and the exploitation of workers.","In 1848 I co-wrote a famous pamphlet with Friedrich Engels.","Communist regimes of the 20th century claimed my ideas."],
+    ["I wrote Das Kapital.","I co-wrote The Communist Manifesto: \"Workers of the world, unite!\"","An ideology, Marxism, is named after me."]],
+   bio:"German philosopher and economist whose critique of capitalism inspired socialist and communist movements around the world."},
+  {id:7, name:"Charles de Gaulle", level:"medium", hints:[
+    ["I was born in Lille in 1890.","I was wounded and captured at Verdun in 1916.","In the 1930s I wrote books calling for a modern army of tanks.","I was nearly two metres tall."],
+    ["I survived several assassination attempts, including one at Le Petit-Clamart in 1962.","In Algiers in 1958 I told the crowd: \"I have understood you.\"","In 1966 I took my country out of NATO's integrated military command.","I resigned in 1969 after losing a referendum."],
+    ["On 18 June 1940 I called on the French to resist, on BBC radio from London.","I led Free France during World War II.","I founded the Fifth Republic in 1958.","I accepted Algeria's independence in 1962."],
+    ["Paris's biggest airport is named after me.","I was the French general who became president from 1959 to 1969.","The French simply call me \"le Général\"."]],
+   bio:"Leader of Free France during World War II and founder of the Fifth Republic, president of France from 1959 to 1969."},
+  {id:8, name:"Jean-Paul Sartre", level:"hard", hints:[
+    ["I was born in Paris in 1905 and lost my father as a baby.","I taught philosophy in a high school in Le Havre.","I was a prisoner of war in 1940 and 1941.","I wrote an autobiography of my childhood called Words."],
+    ["My first novel was Nausea, in 1938.","In 1945 I founded the review Les Temps modernes.","I wrote the play No Exit.","I supported Algeria's independence and the students of May 1968."],
+    ["I refused the Nobel Prize in Literature in 1964.","I wrote Being and Nothingness in 1943.","I wrote: \"Hell is other people.\"","I wrote in the cafés of Saint-Germain-des-Prés, like the Café de Flore."],
+    ["I said \"existence precedes essence\".","I was the leading French philosopher of existentialism.","About 50,000 people followed my funeral in Paris in 1980."]],
+   bio:"French philosopher of existentialism and one of the most politically engaged intellectuals of the 20th century."},
+  {id:9, name:"Bertrand Russell", level:"hard", hints:[
+    ["I was born in 1872 into an aristocratic British family.","My grandfather was twice Prime Minister of the United Kingdom.","I was orphaned young and raised by my grandmother.","I married four times, the last time at 80."],
+    ["I wrote Principia Mathematica with Alfred North Whitehead.","I found a paradox about the set of all sets that don't contain themselves.","I was jailed in 1918 for opposing World War I.","At 89 I was jailed again, for a week, after an anti-nuclear protest."],
+    ["I won the Nobel Prize in Literature in 1950.","I wrote A History of Western Philosophy.","In 1955 I issued a manifesto against nuclear weapons with Albert Einstein.","I was the first president of the Campaign for Nuclear Disarmament."],
+    ["I was a British philosopher, logician and pacifist.","A famous paradox in set theory bears my name.","I was one of the founders of analytic philosophy."]],
+   bio:"British philosopher, logician and peace activist, a leading voice against nuclear weapons."},
+  {id:10, name:"Ibn Khaldun", level:"hard", hints:[
+    ["I was born in Tunis in 1332.","My family came from Seville, in al-Andalus.","I lost both my parents to the Black Death.","I met the conqueror Tamerlane outside Damascus in 1401."],
+    ["I worked for rulers in Fez, Granada, Bejaia and Cairo.","I wrote my great work while retired in a fortress in Algeria.","I served as a Maliki judge in Cairo.","I said history must be studied critically, not just copied."],
+    ["I explained how dynasties rise and fall through asabiyya, group solidarity.","I wrote that very high taxes end up lowering a state's revenue.","I wrote a universal history called Kitab al-Ibar.","I described how nomads conquer cities and then grow soft within a few generations."],
+    ["I wrote the Muqaddimah.","I'm called a father of sociology.","My statue stands in the centre of Tunis."]],
+   bio:"North African historian and thinker whose Muqaddimah laid early foundations of sociology and economics."}
 ];
-const WIKI = {1:"Nelson_Mandela",2:"Mohammed_V_of_Morocco",3:"Abd_el-Krim",4:"Ibn_Khaldun",5:"Margaret_Thatcher",6:"Henry_Kissinger",7:"Deng_Xiaoping",8:"Mehdi_Ben_Barka",9:"Halford_Mackinder",10:"Elinor_Ostrom",
-  11:"Barack_Obama",12:"Angela_Merkel",13:"Mahatma_Gandhi",16:"Winston_Churchill",18:"Charles_de_Gaulle",19:"Mikhail_Gorbachev",20:"Allal_al-Fassi",
-  21:"Lee_Kuan_Yew",22:"Karl_Marx",23:"Christine_Lagarde",24:"Friedrich_Hayek",25:"Abderrahim_Bouabid",26:"Zbigniew_Brzezinski",27:"Amartya_Sen",28:"Kwame_Nkrumah",29:"Muhammad_Yunus",30:"Fatema_Mernissi",
-  31:"Martin_Luther_King_Jr.",32:"Napoleon",33:"Abraham_Lincoln",34:"Ibn_Battuta",35:"Mao_Zedong",36:"Kofi_Annan",37:"Milton_Friedman",38:"Simón_Bolívar",39:"Otto_von_Bismarck",
-  40:"Abderrahmane_Youssoufi",41:"Samir_Amin",42:"Joseph_Stiglitz",43:"Nicholas_J._Spykman",44:"Esther_Duflo"};
-PEOPLE.sort((a,b) => ({easy:0,medium:1,hard:2}[a.level] - {easy:0,medium:1,hard:2}[b.level]) || a.id - b.id);
-/* Photos saved for cards that were removed would sit on the wrong face later: clear them once */
-try{ [14,15,17].forEach(id => localStorage.removeItem("jcmp-wai-photo-"+id)); }catch(e){}
-const LEVELS = {easy:"Easy", medium:"Medium", hard:"Hard"};
+const WIKI = {1:"Nelson_Mandela",2:"Mahatma_Gandhi",3:"Napoleon",4:"Galileo_Galilei",5:"Winston_Churchill",6:"Karl_Marx",7:"Charles_de_Gaulle",8:"Jean-Paul_Sartre",9:"Bertrand_Russell",10:"Ibn_Khaldun"};
+/* Old decks used other numbers: free the space their photos took */
+try{ Object.keys(localStorage).filter(k => k.startsWith("jcmp-wai-photo-")).forEach(k => localStorage.removeItem(k)); }catch(e){}
+const LEVELS = {easy:"Easy", medium:"Medium", hard:"Hard", all:"Random mix"};
 const HINT_EVERY = 20, MAX_HINTS = 4, DUEL_TIME = 100, FREEZE = 5, JOKER_COST = 2, TEAMMATE_TIME = 10;
 
 /* ---------- Storage ---------- */
@@ -591,17 +529,23 @@ function load(){
   return {teams:[], history:[], bags:{easy:[],medium:[],hard:[]}, muted:false};
 }
 let store = load();
+if(store.deck !== "ten-v2"){
+  if(store.deck === "ten-v1"){ (store.history || []).forEach(h => { if(h.people.includes(4)) h.people = []; }); try{ localStorage.removeItem("jcmp-wai-pic-4"); }catch(e){} }
+  else (store.history || []).forEach(h => h.people = []);
+  store.deck = "ten-v2"; store.bags = {}; store.recent = []; store.seen = {}; save();
+}
+store.seen = store.seen || {};
 function save(){ try{ localStorage.setItem(LS, JSON.stringify(store)); }catch(e){ if(!save.warned){ save.warned = true; alert("This browser is blocking storage, so teams and scores won't be kept after closing the page. Open the file in Chrome, Edge or Firefox directly from your computer."); } } }
-function getPhoto(id){ try{ return localStorage.getItem("jcmp-wai-photo-"+id); }catch(e){ return null; } }
-function setPhoto(id, d){ try{ localStorage.setItem("jcmp-wai-photo-"+id, d); return true; }catch(e){ return false; } }
-function delPhoto(id){ try{ localStorage.removeItem("jcmp-wai-photo-"+id); }catch(e){} }
+function getPhoto(id){ try{ return localStorage.getItem("jcmp-wai-pic-"+id); }catch(e){ return null; } }
+function setPhoto(id, d){ try{ localStorage.setItem("jcmp-wai-pic-"+id, d); return true; }catch(e){ return false; } }
+function delPhoto(id){ try{ localStorage.removeItem("jcmp-wai-pic-"+id); }catch(e){} }
 
 /* ---------- Helpers ---------- */
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const person = id => PEOPLE.find(p => p.id === id);
 const team = id => store.teams.find(t => t.id === id);
-const idsOf = lvl => PEOPLE.filter(p => p.level === lvl).map(p => p.id);
+const idsOf = lvl => PEOPLE.filter(p => lvl === "all" || p.level === lvl).map(p => p.id);
 const fmt = s => Math.floor(s/60) + ":" + String(Math.floor(s%60)).padStart(2,"0");
 const rand = n => { try{ const u = new Uint32Array(1); crypto.getRandomValues(u); return u[0] % n; }catch(e){ return Math.floor(Math.random()*n); } };
 const shuffle = a => { a = [...a]; for(let i=a.length-1;i>0;i--){ const j=rand(i+1); [a[i],a[j]]=[a[j],a[i]]; } return a; };
@@ -610,15 +554,26 @@ const photoHTML = p => { const d = getPhoto(p.id); return d ? `<img src="${d}" a
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /* Shuffle bag: every personality of a level comes back, but spread out */
-function drawFromBag(level, exclude){
+function drawFromBag(level, exclude, avoid = []){
   const all = idsOf(level), recent = store.recent || [];
   const bag = store.bags[level] = (store.bags[level] || []).filter(id => all.includes(id));
   if(!bag.some(id => id !== exclude)){
-    /* New round of this level: every card once, in random order; the ones just played go last */
-    const key = id => id === exclude ? 2 : recent.includes(id) ? 1 : 0;
-    bag.push(...shuffle(all).filter(id => !bag.includes(id)).sort((a,b) => key(a) - key(b)));
+    /* New round: every card once, in random order, without starting on the cards just played */
+    const last = recent.slice(0, 2);
+    let fresh = [];
+    for(let t = 0; t < 40; t++){
+      fresh = shuffle(all.filter(id => !bag.includes(id)));
+      if(!fresh.slice(0, 2).some(id => last.includes(id) || id === exclude)) break;
+    }
+    bag.push(...fresh);
   }
-  const id = bag.splice(bag.findIndex(x => x !== exclude), 1)[0];
+  let k = bag.findIndex(x => x !== exclude && !avoid.includes(x));
+  if(k < 0 && avoid.length){ /* only a repeated face-off is left: borrow a card from the next round */
+    const extra = shuffle(all.filter(id => id !== exclude && !avoid.includes(id) && !bag.includes(id)));
+    if(extra.length){ bag.push(extra[0]); k = bag.length - 1; }
+  }
+  if(k < 0) k = bag.findIndex(x => x !== exclude);
+  const id = bag.splice(k, 1)[0];
   store.recent = [id, ...recent.filter(x => x !== id)].slice(0, 8);
   return id;
 }
@@ -741,8 +696,12 @@ function startSpin(){
   if(!play.teams[0] || !play.teams[1]){ play.error = "Choose a team for each player."; return renderPlay(); }
   if(play.teams[0] === play.teams[1]){ play.error = "The two players must come from different teams."; return renderPlay(); }
   play.error = "";
-  const lvl = play.final ? "hard" : (play.level === "random" ? pickLevel() : play.level);
-  const a = drawFromBag(lvl, null), b = drawFromBag(lvl, a);
+  const lvl = play.final ? "hard" : (play.level === "random" ? "all" : play.level);
+  /* Never replay a face-off from the last few duels */
+  const pairs = store.pairs || [];
+  const a = drawFromBag(lvl, null);
+  const b = drawFromBag(lvl, a, pairs.filter(pr => pr.includes(a)).map(pr => pr[0] === a ? pr[1] : pr[0]));
+  store.pairs = [[a,b], ...pairs].slice(0, 12);
   save();
   play.lvl = lvl; play.p = [a,b]; play.phase = "spin";
   renderPlay(); runReels();
@@ -786,9 +745,21 @@ function runReels(){
 }
 
 /* ---------- Duel ---------- */
+/* Pick one hint per pile for this card, preferring hints it hasn't shown recently */
+function dealHints(pid){
+  const p = person(pid), seen = store.seen[pid] || [];
+  const out = p.hints.map(pile => {
+    const fresh = pile.filter(h => !seen.includes(h));
+    const from = fresh.length ? fresh : pile;
+    return from[rand(from.length)];
+  });
+  store.seen[pid] = [...out, ...seen.filter(h => !out.includes(h))].slice(0, 10);
+  save();
+  return out;
+}
 function newDuel(){
   return {elapsed:0, last:0, running:false, hints:0, lastSec:0, buzz:null, buzzHints:0, ended:false, newHint:false,
-          pl:[0,1].map(() => ({wrong:0, frozenUntil:0, joker:null, tmEnds:0}))};
+          pl:[0,1].map(i => ({wrong:0, frozenUntil:0, joker:null, tmEnds:0, hints:dealHints(play.p[i])}))};
 }
 
 function duelHTML(){
@@ -825,10 +796,9 @@ function duelHTML(){
 
 function renderHints(i){
   const el = $("#hints"+i); if(!el || !duel) return;
-  const p = person(play.p[i]);
-  el.innerHTML = p.hints.map((h,k) => k < duel.hints
-    ? `<li class="on ${duel.newHint && k === duel.hints-1 ? "new" : ""}">${esc(h)}</li>`
-    : `<li class="off">Hint ${k+1} unlocks at ${fmt((k+1)*HINT_EVERY)}</li>`).join("");
+  el.innerHTML = duel.pl[i].hints.map((h,k) => k < duel.hints
+    ? `<li class="on ${duel.newHint && k === duel.hints-1 ? "new" : ""}"><span class="tier">${TIERS[k]}</span>${esc(h)}</li>`
+    : `<li class="off">${TIERS[k]} unlocks at ${fmt((k+1)*HINT_EVERY)}</li>`).join("");
 }
 
 function renderSides(){
